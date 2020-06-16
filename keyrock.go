@@ -88,32 +88,59 @@ func (a *application) WithTokenTypes(types ...string) *application {
 }
 
 
-func (c client) CreateApplication(token *Token, app *application) (*ApplicationResponse, error) {
+func (c client) CreateApplication(token *Token, app *application)  error {
+	if len(app.Secret) != 0 || len(app.JwtSecret) != 0 || len(app.Image) != 0 || len(app.ID.Value) != 0{
+		return fmt.Errorf("only set name, description, redirect uri, grant types and token types")
+	}
 	body, err := json.Marshal(struct {
 		*application `json:"application"`
 	}{app})
-	fmt.Println(string(body))
 	if err != nil {
-		return nil, err
+		return err
 	}
 	req, err := http.NewRequest("POST", c.getURL("/v1/applications"), bytes.NewBuffer(body))
 	if err != nil {
-		return nil, err
+		return err
 	}
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("X-Auth-token", token.Token)
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	defer resp.Body.Close()
-	var appResponse ApplicationResponse
+	var appResponse applicationResponse
 	if err := json.NewDecoder(resp.Body).Decode(&appResponse); err != nil {
-		return nil, err
+		return err
 	}
-	return &appResponse, nil
+	app.GrantType = strings.Split(appResponse.Application.GrantType,",")
+	app.ID.Value = appResponse.Application.ID
+	app.TokenTypes = strings.Split(appResponse.Application.TokenTypes,",")
+	app.Image = appResponse.Application.Image
+	app.JwtSecret = appResponse.Application.JwtSecret
+	app.Secret = appResponse.Application.Secret
+	return nil
 }
 
+func (c client) DeleteApplication(token *Token, id ID) error {
+	if len(id.Value) == 0 {
+		return fmt.Errorf("id can not be empty")
+	}
+	req, err := http.NewRequest("DELETE", c.getURL("/v1/applications/") + id.Value,nil)
+	if err != nil {
+		return err
+	}
+	req.Header.Set("X-Auth-token", token.Token)
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusNoContent {
+		return fmt.Errorf("could not delete application")
+	}
+	return nil
+}
 
 func (c client) GetTokenInfo(token *Token) (*TokenInfo, error) {
 	req, err := http.NewRequest("GET",c.getURL("/v1/auth/tokens"), nil)

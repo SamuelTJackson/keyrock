@@ -1,6 +1,9 @@
 package keyrock
 
-import "time"
+import (
+	"encoding/json"
+	"time"
+)
 
 type user struct {
 	Name     string `json:"name"`
@@ -45,8 +48,7 @@ type ApplicationList struct {
 	} `json:"applications"`
 }
 
-
-type ApplicationResponse struct {
+type applicationResponse struct {
 	Application struct {
 		ID           string `json:"id"`
 		Secret       string `json:"secret"`
@@ -63,10 +65,33 @@ type ApplicationResponse struct {
 }
 
 type application struct {
+	ID          ID       `json:"id,omitempty"`
+	Secret      string   `json:"secret,omitempty"`
+	Image       string   `json:"image,omitempty"`
+	JwtSecret   string   `json:"jwt_secret,omitempty"`
 	Name        string   `json:"name"`
 	Description string   `json:"description"`
 	RedirectURI string   `json:"redirect_uri,omitempty"`
 	URL         string   `json:"url"`
 	GrantType   []string `json:"grant_type,omitempty"`
 	TokenTypes  []string `json:"token_types,omitempty"`
+}
+
+type ID struct {
+	Value string `json:"id,omitempty"`
+}
+func (i ID) MarshalJSON() ([]byte, error) {
+	return json.Marshal(i.Value)
+}
+func (i *ID) UnmarshalJSON(data []byte) error {
+
+	var v []interface{}
+	if err := json.Unmarshal(data, &v); err != nil {
+		return err
+	}
+
+	i.Value, _ = v[0].(string)
+
+
+	return nil
 }
