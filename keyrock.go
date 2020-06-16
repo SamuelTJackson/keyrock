@@ -56,7 +56,7 @@ func (c *client) GetToken() (*Token, error) {
 		Password: c.options.Password,
 	})
 	if err != nil {
-		return nil,err
+		return nil, err
 	}
 	req, err := http.NewRequest("POST", c.getURL("/v1/auth/tokens"), bytes.NewBuffer(body))
 	resp, err := c.httpClient.Do(req)
@@ -64,12 +64,13 @@ func (c *client) GetToken() (*Token, error) {
 		return nil, err
 	}
 	defer resp.Body.Close()
-
+	fmt.Println(resp.StatusCode)
 	if token := resp.Header.Get("X-Subject-Token"); len(token) != 0 {
 		return &Token{
 			Token: token,
 		}, nil
 	}
-	return nil, fmt.Errorf("could not get token")
+	return nil, fmt.Errorf("Could not get token. Keyrock responsed with %s - code: %d ",
+		resp.Status, resp.StatusCode)
 }
 
