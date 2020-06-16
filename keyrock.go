@@ -43,34 +43,33 @@ func NewClient(options *Options) (*client,error) {
 		options: options,
 		mutex: &sync.Mutex{},
 	}
-	if err := newClient.refreshToken(); err != nil {
-		return nil, err
-	}
 	return newClient, nil
 }
 
-func (c *client) refreshToken() error {
+func (c *client) ListApplications() {
+
+}
+
+func (c *client) GetToken() (*Token, error) {
 	body, err := json.Marshal(&user{
 		Name:     c.options.Email,
 		Password: c.options.Password,
 	})
 	if err != nil {
-		return err
+		return nil,err
 	}
 	req, err := http.NewRequest("POST", c.getURL("/v1/auth/tokens"), bytes.NewBuffer(body))
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer resp.Body.Close()
-	c.mutex.Lock()
-	c.token = resp.Header.Get("X-Subject-Token")
-	c.mutex.Unlock()
-	return nil
+
+	if token := resp.Header.Get("X-Subject-Token"); len(token) != 0 {
+		return &Token{
+			Token: token,
+		}, nil
+	}
+	return nil, fmt.Errorf("could not get token")
 }
 
-func (c *client) getToken() string {
-	c.mutex.Lock()
-	defer c.mutex.Unlock()
-	return c.token
-}
