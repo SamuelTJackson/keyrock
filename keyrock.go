@@ -63,14 +63,16 @@ func (c *client) GetTokenInfo(token *Token) (*TokenInfo, error) {
 		return nil, err
 	}
 	defer resp.Body.Close()
-	fmt.Println(resp.StatusCode)
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("could not get informations")
+	}
 	b, _ :=ioutil.ReadAll(resp.Body)
 	fmt.Println(string(b))
-	var tokenInfo *TokenInfo
-	if err := json.NewDecoder(resp.Body).Decode(tokenInfo); err != nil {
+	var tokenInfo TokenInfo
+	if err := json.NewDecoder(resp.Body).Decode(&tokenInfo); err != nil {
 		return nil, err
 	}
-	return tokenInfo, nil
+	return &tokenInfo, nil
 }
 
 func (c *client) GetToken() (*Token, error) {
