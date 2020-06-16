@@ -65,21 +65,17 @@ func (c client) ListApplications(token *Token) (*ApplicationList, error) {
 	return &appList, nil
 }
 func CreateApplicationRequest(name string, description string,
-	redirectUri []string, url string) (interface{}, error) {
+	redirectUri []string, url string) (Application, error) {
 	if len(name) == 0 || len(redirectUri) == 0 || len(url) == 0 {
 		return nil, fmt.Errorf("name/redirect URI/url can not be empty")
 	}
-	app := &struct {
-		Application `json:"Application"`
-	}{
-		Application{
-			Name:        name,
-			Description: description,
-			RedirectURI: strings.Join(redirectUri,","),
-			URL:         url,
-			GrantType:   nil,
-			TokenTypes:  nil,
-		},
+	app := Application{
+		Name:        "",
+		Description: "",
+		RedirectURI: "",
+		URL:         "",
+		GrantType:   nil,
+		TokenTypes:  nil,
 	}
 	return app,nil
 }
