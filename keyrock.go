@@ -17,7 +17,6 @@ type Options struct {
 type client struct {
 	httpClient *http.Client
 	options *Options
-	token string
 	mutex *sync.Mutex
 }
 func validateOptions(options *Options) error {
@@ -46,7 +45,7 @@ func NewClient(options *Options) (*client,error) {
 	return newClient, nil
 }
 
-func (c *client) ListApplications(token *Token) (*ApplicationList, error) {
+func (c client) ListApplications(token *Token) (*ApplicationList, error) {
 	req, err := http.NewRequest("GET", c.getURL("/v1/applications"), nil)
 	if err != nil {
 		return nil, err
@@ -64,8 +63,32 @@ func (c *client) ListApplications(token *Token) (*ApplicationList, error) {
 	}
 	return &appList, nil
 }
+func (c client) CreateApplication(token *Token, app *ApplicationRequest) (*ApplicationResponse, error) {
+	body, err := json.Marshal(app)
+	if err != nil {
+		return nil, err
+	}
+	req, err := http.NewRequest("POST", c.getURL("/v1/applications"), bytes.NewBuffer(body))
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-Auth-token", token.Token)
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
 
-func (c *client) GetTokenInfo(token *Token) (*TokenInfo, error) {
+	var appResponse ApplicationResponse
+	if err := json.NewDecoder(resp.Body).Decode(&appResponse); err != nil {
+		return nil, err
+	}
+	return &appResponse, nil
+}
+
+
+func (c client) GetTokenInfo(token *Token) (*TokenInfo, error) {
 	req, err := http.NewRequest("GET",c.getURL("/v1/auth/tokens"), nil)
 	if err != nil {
 		return nil, err
@@ -87,7 +110,7 @@ func (c *client) GetTokenInfo(token *Token) (*TokenInfo, error) {
 	return &tokenInfo, nil
 }
 
-func (c *client) GetToken() (*Token, error) {
+func (c client) GetToken() (*Token, error) {
 	body, err := json.Marshal(&user{
 		Name:     c.options.Email,
 		Password: c.options.Password,
