@@ -64,6 +64,10 @@ func (c *client) GetToken() (*Token, error) {
 		return nil, err
 	}
 	defer resp.Body.Close()
+	if resp.StatusCode == http.StatusUnauthorized {
+		return nil, UnauthorizedError{error: fmt.Errorf("check your mail and/or password")}
+	}
+
 	fmt.Println(resp.StatusCode)
 	if token := resp.Header.Get("X-Subject-Token"); len(token) != 0 {
 		return &Token{
