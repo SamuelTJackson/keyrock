@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"sync"
 )
@@ -66,11 +65,9 @@ func (c *client) GetTokenInfo(token *Token) (*TokenInfo, error) {
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("could not get informations")
 	}
-	b, _ :=ioutil.ReadAll(resp.Body)
-	fmt.Println(string(b))
 	var tokenInfo TokenInfo
 	if err := json.NewDecoder(resp.Body).Decode(&tokenInfo); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("could not decode keyrock response - %s", err.Error())
 	}
 	return &tokenInfo, nil
 }
