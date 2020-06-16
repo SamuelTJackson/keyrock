@@ -21,14 +21,14 @@ type client struct {
 	mutex *sync.Mutex
 }
 func validateOptions(options *Options) error {
-	if len(options.password) == 0 {
+	if len(options.Password) == 0 {
 		return fmt.Errorf("password can not be empty")
 	}
-	if len(options.email) == 0{
+	if len(options.Email) == 0{
 		return fmt.Errorf("email can not be empty")
 	}
-	if options.baseURL[len(options.baseURL) - 1:] == "/" {
-		options.baseURL = options.baseURL[:len(options.baseURL) - 1]
+	if options.BaseURL[len(options.BaseURL) - 1:] == "/" {
+		options.BaseURL = options.BaseURL[:len(options.BaseURL) - 1]
 	}
 	return nil
 }
@@ -51,8 +51,8 @@ func NewClient(options *Options) (*client,error) {
 
 func (c *client) refreshToken() error {
 	body, err := json.Marshal(&user{
-		Name:     c.options.email,
-		Password: c.options.password,
+		Name:     c.options.Email,
+		Password: c.options.Password,
 	})
 	if err != nil {
 		return err
