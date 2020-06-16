@@ -59,6 +59,7 @@ func (c *client) GetToken() (*Token, error) {
 		return nil, err
 	}
 	req, err := http.NewRequest("POST", c.getURL("/v1/auth/tokens"), bytes.NewBuffer(body))
+	req.Header.Set("Content-Type","application/json")
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return nil, err
@@ -67,8 +68,6 @@ func (c *client) GetToken() (*Token, error) {
 	if resp.StatusCode == http.StatusUnauthorized {
 		return nil, UnauthorizedError{error: fmt.Errorf("check your mail and/or password")}
 	}
-
-	fmt.Println(resp.StatusCode)
 	if token := resp.Header.Get("X-Subject-Token"); len(token) != 0 {
 		return &Token{
 			Token: token,
