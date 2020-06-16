@@ -45,36 +45,28 @@ type ApplicationList struct {
 	} `json:"applications"`
 }
 
-type ApplicationRequest struct {
-	Application struct {
-		Name        string   `json:"name"`
-		Description string   `json:"description"`
-		RedirectURI string   `json:"redirect_uri"`
-		URL         string   `json:"url"`
-		GrantType   []string `json:"grant_type"`
-		TokenTypes  []string `json:"token_types"`
-	} `json:"application"`
-}
+
 type ApplicationResponse struct {
 	Application struct {
 		ID           string `json:"id"`
 		Secret       string `json:"secret"`
 		Image        string `json:"image"`
+		JwtSecret    string `json:"jwt_secret"`
 		Name         string `json:"name"`
 		Description  string `json:"description"`
 		RedirectURI  string `json:"redirect_uri"`
 		URL          string `json:"url"`
 		GrantType    string `json:"grant_type"`
 		TokenTypes   string `json:"token_types"`
-		JwtSecret    string `json:"jwt_secret"`
 		ResponseType string `json:"response_type"`
 	} `json:"application"`
 }
-type Application struct {
-Name        string   `json:"name"`
-Description string   `json:"description"`
-RedirectURI string   `json:"redirect_uri"`
-URL         string   `json:"url"`
-GrantType   []string `json:"grant_type"`
-TokenTypes  []string `json:"token_types"`
+
+type application struct {
+	Name        string   `json:"name"`
+	Description string   `json:"description"`
+	RedirectURI string   `json:"redirect_uri,omitempty"`
+	URL         string   `json:"url"`
+	GrantType   []string `json:"grant_type,omitempty"`
+	TokenTypes  []string `json:"token_types,omitempty"`
 }

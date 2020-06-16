@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 	"sync"
 )
 
@@ -19,6 +20,9 @@ type client struct {
 	options *Options
 	mutex *sync.Mutex
 }
+
+
+
 func validateOptions(options *Options) error {
 	if len(options.Password) == 0 {
 		return fmt.Errorf("password can not be empty")
@@ -63,24 +67,32 @@ func (c client) ListApplications(token *Token) (*ApplicationList, error) {
 	}
 	return &appList, nil
 }
-func CreateApplicationRequest(name string, description string,
-	redirectUri []string, url string) (Application, error) {
-	if len(name) == 0 || len(redirectUri) == 0 || len(url) == 0 {
-		return Application{}, fmt.Errorf("name/redirect URI/url can not be empty")
+func NewApplication(name string, description string, url string) *application{
+	return &application{
+		Name:        name,
+		Description: description,
+		URL:         url,
 	}
-	app := Application{
-		Name:        "",
-		Description: "",
-		RedirectURI: "",
-		URL:         "",
-		GrantType:   nil,
-		TokenTypes:  nil,
-	}
-	return app,nil
+}
+func (a *application) WithRedirectURIS(uri ...string) *application {
+	a.RedirectURI = strings.Join(uri,",")
+	return a
+}
+func (a *application) WithGrantTypes(types ...string) *application {
+	a.GrantType = types
+	return a
+}
+func (a *application) WithTokenTypes(types ...string) *application {
+	a.TokenTypes = types
+	return a
 }
 
-func (c client) CreateApplication(token *Token, app *ApplicationRequest) (*ApplicationResponse, error) {
-	body, err := json.Marshal(app)
+
+func (c client) CreateApplication(token *Token, app *application) (*ApplicationResponse, error) {
+	body, err := json.Marshal(struct {
+		*application `json:"application"`
+	}{app})
+	fmt.Println(string(body))
 	if err != nil {
 		return nil, err
 	}
@@ -95,7 +107,6 @@ func (c client) CreateApplication(token *Token, app *ApplicationRequest) (*Appli
 		return nil, err
 	}
 	defer resp.Body.Close()
-
 	var appResponse ApplicationResponse
 	if err := json.NewDecoder(resp.Body).Decode(&appResponse); err != nil {
 		return nil, err
