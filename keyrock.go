@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strings"
 	"sync"
 )
 
@@ -67,7 +66,7 @@ func (c client) ListApplications(token *Token) (*ApplicationList, error) {
 func CreateApplicationRequest(name string, description string,
 	redirectUri []string, url string) (Application, error) {
 	if len(name) == 0 || len(redirectUri) == 0 || len(url) == 0 {
-		return nil, fmt.Errorf("name/redirect URI/url can not be empty")
+		return Application{}, fmt.Errorf("name/redirect URI/url can not be empty")
 	}
 	app := Application{
 		Name:        "",
