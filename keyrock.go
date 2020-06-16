@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"sync"
 )
@@ -62,6 +63,9 @@ func (c *client) GetTokenInfo(token *Token) (*TokenInfo, error) {
 		return nil, err
 	}
 	defer resp.Body.Close()
+	fmt.Println(resp.StatusCode)
+	b, _ :=ioutil.ReadAll(resp.Body)
+	fmt.Println(string(b))
 	var tokenInfo *TokenInfo
 	if err := json.NewDecoder(resp.Body).Decode(tokenInfo); err != nil {
 		return nil, err
