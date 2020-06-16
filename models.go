@@ -70,3 +70,11 @@ type ApplicationResponse struct {
 		ResponseType string `json:"response_type"`
 	} `json:"application"`
 }
+type Application struct {
+Name        string   `json:"name"`
+Description string   `json:"description"`
+RedirectURI string   `json:"redirect_uri"`
+URL         string   `json:"url"`
+GrantType   []string `json:"grant_type"`
+TokenTypes  []string `json:"token_types"`
+}
