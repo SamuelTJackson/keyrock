@@ -9,9 +9,9 @@ import (
 )
 
 type Options struct {
-	baseURL 	string
-	email		string
-	password	string
+	BaseURL 	string
+	Email		string
+	Password	string
 }
 
 type client struct {
