@@ -46,8 +46,23 @@ func NewClient(options *Options) (*client,error) {
 	return newClient, nil
 }
 
-func (c *client) ListApplications() {
+func (c *client) ListApplications(token *Token) (*ApplicationList, error) {
+	req, err := http.NewRequest("GET", c.getURL("/v1/applications"), nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("X-Auth-token", token.Token)
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
 
+	var appList ApplicationList
+	if err := json.NewDecoder(resp.Body).Decode(&appList); err != nil {
+		return nil, err
+	}
+	return &appList, nil
 }
 
 func (c *client) GetTokenInfo(token *Token) (*TokenInfo, error) {

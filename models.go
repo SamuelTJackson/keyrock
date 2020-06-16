@@ -29,3 +29,20 @@ type TokenInfo struct {
 		Admin        bool          `json:"admin"`
 	} `json:"User"`
 }
+
+type ApplicationList struct {
+	Applications []Application `json:"applications"`
+}
+
+type Application struct {
+	ID           string      `json:"id"`
+	Name         string      `json:"name"`
+	Description  string      `json:"description"`
+	Image        string      `json:"image"`
+	URL          string      `json:"url"`
+	RedirectURI  string      `json:"redirect_uri"`
+	GrantType    string      `json:"grant_type"`
+	ResponseType string      `json:"response_type"`
+	TokenTypes   string      `json:"token_types"`
+	ClientType   interface{} `json:"client_type"`
+}
