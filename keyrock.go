@@ -50,6 +50,25 @@ func (c *client) ListApplications() {
 
 }
 
+func (c *client) GetTokenInfo(token *Token) (*TokenInfo, error) {
+	req, err := http.NewRequest("GET",c.getURL("/v1/auth/tokens"), nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("X-Auth-token", token.Token)
+	req.Header.Set("X-Subject-token", token.Token)
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	var tokenInfo *TokenInfo
+	if err := json.NewDecoder(resp.Body).Decode(tokenInfo); err != nil {
+		return nil, err
+	}
+	return tokenInfo, nil
+}
+
 func (c *client) GetToken() (*Token, error) {
 	body, err := json.Marshal(&user{
 		Name:     c.options.Email,
