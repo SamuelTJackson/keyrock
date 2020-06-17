@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"strings"
 	"sync"
+	"time"
 )
 
 type Options struct {
@@ -19,6 +20,7 @@ type client struct {
 	httpClient *http.Client
 	options *Options
 	mutex *sync.Mutex
+	credentials *credentials
 }
 
 
@@ -35,6 +37,17 @@ func validateOptions(options *Options) error {
 	}
 	return nil
 }
+func (c client) validateToken() error {
+	if len(c.credentials.token) == 0 {
+		return fmt.Errorf("no token available")
+	}
+	if time.Now().After(c.credentials.valid.Add(time.Second * 10)) {
+		return TokenExpired{fmt.Errorf("token expired since %f minutes",
+			time.Now().Sub(c.credentials.valid).Minutes())}
+	}
+
+	return nil
+}
 
 func NewClient(options *Options) (*client,error) {
 	if err := validateOptions(options); err != nil {
@@ -49,12 +62,15 @@ func NewClient(options *Options) (*client,error) {
 	return newClient, nil
 }
 
-func (c client) ListApplications(token *Token) (*ApplicationList, error) {
+func (c client) ListApplications() (*ApplicationList, error) {
+	if err := c.validateToken(); err != nil {
+		return nil, err
+	}
 	req, err := http.NewRequest("GET", c.getURL("/v1/applications"), nil)
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("X-Auth-token", token.Token)
+	req.Header.Set("X-Auth-token", c.credentials.token)
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return nil, err
@@ -88,7 +104,13 @@ func (a *application) WithTokenTypes(types ...string) *application {
 }
 
 
-func (c client) CreateApplication(token *Token, app *application)  error {
+func (c client) CreateApplication(app *application)  error {
+	if err := c.validateToken(); err != nil {
+		return err
+	}
+	if len(app.RedirectURI) == 0 {
+		return fmt.Errorf("redirect URIS are required")
+	}
 	if len(app.Secret) != 0 || len(app.JwtSecret) != 0 || len(app.Image) != 0 || len(app.ID.Value) != 0{
 		return fmt.Errorf("only set name, description, redirect uri, grant types and token types")
 	}
@@ -103,7 +125,7 @@ func (c client) CreateApplication(token *Token, app *application)  error {
 		return err
 	}
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("X-Auth-token", token.Token)
+	req.Header.Set("X-Auth-token", c.credentials.token)
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return err
@@ -122,7 +144,10 @@ func (c client) CreateApplication(token *Token, app *application)  error {
 	return nil
 }
 
-func (c client) DeleteApplication(token *Token, id ID) error {
+func (c client) DeleteApplication(id ID) error {
+	if err := c.validateToken(); err != nil {
+		return err
+	}
 	if len(id.Value) == 0 {
 		return fmt.Errorf("id can not be empty")
 	}
@@ -130,7 +155,7 @@ func (c client) DeleteApplication(token *Token, id ID) error {
 	if err != nil {
 		return err
 	}
-	req.Header.Set("X-Auth-token", token.Token)
+	req.Header.Set("X-Auth-token", c.credentials.token)
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return err
@@ -142,13 +167,16 @@ func (c client) DeleteApplication(token *Token, id ID) error {
 	return nil
 }
 
-func (c client) GetTokenInfo(token *Token) (*TokenInfo, error) {
+func (c client) GetTokenInfo() (*TokenInfo, error) {
+	if len(c.credentials.token) == 0 {
+		return nil, fmt.Errorf("no token available")
+	}
 	req, err := http.NewRequest("GET",c.getURL("/v1/auth/tokens"), nil)
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("X-Auth-token", token.Token)
-	req.Header.Set("X-Subject-token", token.Token)
+	req.Header.Set("X-Auth-token", c.credentials.token)
+	req.Header.Set("X-Subject-token", c.credentials.token)
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return nil, err
@@ -164,30 +192,74 @@ func (c client) GetTokenInfo(token *Token) (*TokenInfo, error) {
 	return &tokenInfo, nil
 }
 
-func (c client) GetToken() (*Token, error) {
+func (c *client) GetToken() error {
 	body, err := json.Marshal(&user{
 		Name:     c.options.Email,
 		Password: c.options.Password,
 	})
 	if err != nil {
-		return nil, err
+		return err
 	}
 	req, err := http.NewRequest("POST", c.getURL("/v1/auth/tokens"), bytes.NewBuffer(body))
 	req.Header.Set("Content-Type","application/json")
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode == http.StatusUnauthorized {
-		return nil, UnauthorizedError{error: fmt.Errorf("check your mail and/or password")}
+		return UnauthorizedError{error: fmt.Errorf("check your mail and/or password")}
 	}
-	if token := resp.Header.Get("X-Subject-Token"); len(token) != 0 {
-		return &Token{
-			Token: token,
-		}, nil
+
+	type TokenResponse struct {
+		Token struct {
+			Methods   []string  `json:"methods"`
+			ExpiresAt time.Time `json:"expires_at"`
+		} `json:"token"`
 	}
-	return nil, fmt.Errorf("Could not get token. Keyrock responsed with %s - code: %d ",
-		resp.Status, resp.StatusCode)
+	var tokenResponse TokenResponse
+	if err := json.NewDecoder(resp.Body).Decode(&tokenResponse); err != nil {
+		return err
+	}
+	token := resp.Header.Get("X-Subject-Token")
+
+	if len(token) == 0 {
+		return fmt.Errorf("Could not get token. Keyrock responsed with %s - code: %d ",
+			resp.Status, resp.StatusCode)
+	}
+	c.credentials = &credentials{
+		token: token,
+		valid: tokenResponse.Token.ExpiresAt,
+		methods: tokenResponse.Token.Methods,
+	}
+	return nil
+}
+
+func (c client) CreatePepProxy(id ID) (*PepProxy, error) {
+	if err := c.validateToken(); err != nil {
+		return nil, err
+	}
+	req, err := http.NewRequest("POST",
+		c.getURL(fmt.Sprintf("/v1/applications/%s/pep_proxies", id.Value)),nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Content-Type","application/json")
+	req.Header.Set("X-Auth-token", c.credentials.token)
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	type pepResponse struct {
+		PepProxy `json:"pep_proxy"`
+	}
+	var pepProxy pepResponse
+	if err := json.NewDecoder(resp.Body).Decode(&pepProxy); err != nil {
+		return nil, err
+	}
+
+	return &pepProxy.PepProxy, nil
+
 }
 

@@ -10,12 +10,22 @@ type user struct {
 	Password string `json:"password"`
 }
 
-type Token struct {
-	Token string
+type credentials struct {
+	token   string
+	valid   time.Time
+	methods []string
 }
 
 type UnauthorizedError struct {
 	error
+}
+type TokenExpired struct {
+	error
+}
+
+type PepProxy struct {
+	ID       string `json:"id"`
+	Password string `json:"password"`
 }
 
 type TokenInfo struct {
@@ -80,6 +90,7 @@ type application struct {
 type ID struct {
 	Value string `json:"id,omitempty"`
 }
+
 func (i ID) MarshalJSON() ([]byte, error) {
 	return json.Marshal(i.Value)
 }
@@ -91,7 +102,6 @@ func (i *ID) UnmarshalJSON(data []byte) error {
 	}
 
 	i.Value, _ = v[0].(string)
-
 
 	return nil
 }
