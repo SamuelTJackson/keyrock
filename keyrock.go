@@ -32,6 +32,9 @@ func validateOptions(options *Options) error {
 	if len(options.Email) == 0{
 		return fmt.Errorf("email can not be empty")
 	}
+	if len(options.BaseURL) == 0 {
+		return fmt.Errorf("base url can not be empty")
+	}
 	if options.BaseURL[len(options.BaseURL) - 1:] == "/" {
 		options.BaseURL = options.BaseURL[:len(options.BaseURL) - 1]
 	}
@@ -173,6 +176,7 @@ func (c client) Ping() error {
 	if err != nil {
 		return err
 	}
+
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return err
