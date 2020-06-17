@@ -65,6 +65,9 @@ func NewClient(options *Options) (*client,error) {
 	}
 	return newClient, nil
 }
+func (c *client) SetTransport(transport *http.Transport)  {
+	c.httpClient.Transport = transport
+}
 
 func (c client) ListApplications() (*ApplicationList, error) {
 	if err := c.validateToken(); err != nil {
