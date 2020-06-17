@@ -12,6 +12,7 @@ type Options struct {
 	BaseURL 	string
 	Email		string
 	Password	string
+	AutomaticTokenRefresh bool
 }
 
 type client struct {
@@ -40,6 +41,9 @@ func (c client) validateToken() error {
 		return fmt.Errorf("no token available")
 	}
 	if time.Now().After(c.credentials.valid.Add(time.Second * 10)) {
+		if c.options.AutomaticTokenRefresh {
+			return c.GetToken()
+		}
 		return TokenExpired{fmt.Errorf("token expired since %f minutes",
 			time.Now().Sub(c.credentials.valid).Minutes())}
 	}
