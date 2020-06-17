@@ -54,6 +54,7 @@ func NewClient(options *Options) (*client,error) {
 		return nil, err
 	}
 	httpClient := &http.Client{}
+	httpClient.Timeout = time.Second * 2
 	newClient := &client{
 		httpClient: httpClient,
 		options: options,
@@ -163,6 +164,21 @@ func (c client) DeleteApplication(id ID) error {
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusNoContent {
 		return fmt.Errorf("could not delete application")
+	}
+	return nil
+}
+
+func (c client) Ping() error {
+	req, err := http.NewRequest("GET", c.getURL(""),nil)
+	if err != nil {
+		return err
+	}
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return err
+	}
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("keyrock not correct installed")
 	}
 	return nil
 }
