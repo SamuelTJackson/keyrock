@@ -8,6 +8,10 @@ import (
 	"time"
 )
 
+// BaseURL: Base url of keyrock
+// Email: Email of keyrock user
+// Password: Password for the keyrock user
+// AutomaticTokenRefresh: Whether the token should be refreshed automatically or not
 type Options struct {
 	BaseURL 	string
 	Email		string
@@ -15,12 +19,18 @@ type Options struct {
 	AutomaticTokenRefresh bool
 }
 
+
 type client struct {
 	httpClient *http.Client
 	options *Options
 	mutex *sync.Mutex
 	credentials *credentials
 }
+
+// Password must be set
+// Email must be set
+// Base URL must be set
+// Remove trailing slash from Base URL if exists
 func validateOptions(options *Options) error {
 	if len(options.Password) == 0 {
 		return fmt.Errorf("password can not be empty")
