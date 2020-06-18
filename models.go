@@ -44,24 +44,6 @@ type TokenInfo struct {
 	} `json:"User"`
 }
 
-
-
-type applicationResponse struct {
-	Application struct {
-		ID           string `json:"id"`
-		Secret       string `json:"secret"`
-		Image        string `json:"image"`
-		JwtSecret    string `json:"jwt_secret"`
-		Name         string `json:"name"`
-		Description  string `json:"description"`
-		RedirectURI  string `json:"redirect_uri"`
-		URL          string `json:"url"`
-		GrantType    string `json:"grant_type"`
-		TokenTypes   string `json:"token_types"`
-		ResponseType string `json:"response_type"`
-	} `json:"application"`
-}
-
 type application struct {
 	ID          ID       `json:"id,omitempty"`
 	Secret      string   `json:"secret,omitempty"`
@@ -76,44 +58,43 @@ type application struct {
 }
 
 type TokenTypes struct {
-	Types string
+	Types []string
 }
 
 func (g *TokenTypes) UnmarshalJSON(data []byte) error {
-	g.Types = string(data)
+	g.Types = strings.Split(strings.ReplaceAll(string(data),"\"",""),",")
 	return nil
 }
 func (g *TokenTypes) MarshalJSON() ([]byte, error)  {
 	if len(g.Types) == 0 {
 		return nil, nil
 	}
-	return json.Marshal(strings.Split(g.Types,","))
+	return json.Marshal(g.Types)
 }
 
 type GrantType struct {
-	Types string
+	Types []string
 }
 
 type ID struct {
 	Value string
 }
 func (g *GrantType) UnmarshalJSON(data []byte) error {
-	g.Types = string(data)
+	g.Types = strings.Split(strings.ReplaceAll(string(data),"\"",""),",")
 	return nil
 }
 func (g *GrantType) MarshalJSON() ([]byte, error)  {
 	if len(g.Types) == 0 {
 		return nil, nil
 	}
-	return json.Marshal(strings.Split(g.Types,","))
+	return json.Marshal(g.Types)
 }
 
 func (i ID) MarshalJSON() ([]byte, error) {
 	return json.Marshal(i.Value)
 }
 func (i *ID) UnmarshalJSON(data []byte) error {
-
-	i.Value = string(data)
+	i.Value = strings.ReplaceAll(string(data),"\"","")
 
 	return nil
 }

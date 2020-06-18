@@ -16,6 +16,15 @@ func (c client) CreateApplication(app *application) error {
 	if len(app.RedirectURI) == 0 {
 		return fmt.Errorf("redirect URIS are required")
 	}
+	if len(app.Name) == 0 {
+		return fmt.Errorf("name is required")
+	}
+	if len(app.Description) == 0 {
+		return fmt.Errorf("description is required")
+	}
+	if len(app.URL) == 0 {
+		return fmt.Errorf("URL is required")
+	}
 	if len(app.Secret) != 0 || len(app.JwtSecret) != 0 || len(app.Image) != 0 || len(app.ID.Value) != 0{
 		return fmt.Errorf("only set name, description, redirect uri, grant types and token types")
 	}

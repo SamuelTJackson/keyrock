@@ -96,7 +96,6 @@ func (c client) GetApplications() ([]*application, error) {
 	type ApplicationList struct {
 		Applications []*application `json:"applications"`
 	}
-
 	var appList ApplicationList
 	if err := json.NewDecoder(resp.Body).Decode(&appList); err != nil {
 		return nil, err
