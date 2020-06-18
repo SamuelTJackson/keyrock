@@ -91,11 +91,11 @@ func (a *application) WithRedirectURIS(uri ...string) *application {
 	return a
 }
 func (a *application) WithGrantTypes(types ...string) *application {
-	a.GrantType = types
+	a.GrantType.Types = strings.Join(types,",")
 	return a
 }
 func (a *application) WithTokenTypes(types ...string) *application {
-	a.TokenTypes = types
+	a.TokenTypes.Types = strings.Join(types,",")
 	return a
 }
 

@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strings"
 )
 
 
@@ -37,13 +36,20 @@ func (c client) CreateApplication(app *application) error {
 		return err
 	}
 	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusCreated {
+		return fmt.Errorf("could not create application - response code %d\n",resp.StatusCode)
+	}
+	type applicationResponse struct {
+		Application application `json:"application"`
+	}
+
 	var appResponse applicationResponse
 	if err := json.NewDecoder(resp.Body).Decode(&appResponse); err != nil {
 		return err
 	}
-	app.GrantType = strings.Split(appResponse.Application.GrantType,",")
-	app.ID.Value = appResponse.Application.ID
-	app.TokenTypes = strings.Split(appResponse.Application.TokenTypes,",")
+	app.GrantType = appResponse.Application.GrantType
+	app.ID = appResponse.Application.ID
+	app.TokenTypes = appResponse.Application.TokenTypes
 	app.Image = appResponse.Application.Image
 	app.JwtSecret = appResponse.Application.JwtSecret
 	app.Secret = appResponse.Application.Secret

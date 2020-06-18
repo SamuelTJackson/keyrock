@@ -76,7 +76,7 @@ func (c client) GetTokenInfo() (*TokenInfo, error) {
 	return &tokenInfo, nil
 }
 
-func (c client) GetApplications() (*ApplicationList, error) {
+func (c client) GetApplications() ([]*application, error) {
 	if err := c.validateToken(); err != nil {
 		return nil, err
 	}
@@ -90,10 +90,38 @@ func (c client) GetApplications() (*ApplicationList, error) {
 		return nil, err
 	}
 	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("could not get application information - status code %d\n", resp.StatusCode)
+	}
+	type ApplicationList struct {
+		Applications []*application `json:"applications"`
+	}
 
 	var appList ApplicationList
 	if err := json.NewDecoder(resp.Body).Decode(&appList); err != nil {
 		return nil, err
 	}
-	return &appList, nil
+	return appList.Applications, nil
+}
+
+func (c client) GetApplication(id ID) (*application, error) {
+	if err := c.validateToken(); err != nil {
+		return nil, err
+	}
+	req, err := http.NewRequest("GET", c.getURL(fmt.Sprintf("/v1/applications/%s", id.Value)), nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("X-Auth-token", c.credentials.token)
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	var app application
+	if err := json.NewDecoder(resp.Body).Decode(&app); err != nil {
+		return nil, err
+	}
+	return &app, nil
 }

@@ -2,6 +2,7 @@ package keyrock
 
 import (
 	"encoding/json"
+	"strings"
 	"time"
 )
 
@@ -43,20 +44,7 @@ type TokenInfo struct {
 	} `json:"User"`
 }
 
-type ApplicationList struct {
-	Applications []struct {
-		ID           string      `json:"id"`
-		Name         string      `json:"name"`
-		Description  string      `json:"description"`
-		Image        string      `json:"image"`
-		URL          string      `json:"url"`
-		RedirectURI  string      `json:"redirect_uri"`
-		GrantType    string      `json:"grant_type"`
-		ResponseType string      `json:"response_type"`
-		TokenTypes   string      `json:"token_types"`
-		ClientType   interface{} `json:"client_type"`
-	} `json:"applications"`
-}
+
 
 type applicationResponse struct {
 	Application struct {
@@ -83,12 +71,41 @@ type application struct {
 	Description string   `json:"description"`
 	RedirectURI string   `json:"redirect_uri,omitempty"`
 	URL         string   `json:"url"`
-	GrantType   []string `json:"grant_type,omitempty"`
-	TokenTypes  []string `json:"token_types,omitempty"`
+	GrantType   *GrantType `json:"grant_type,omitempty"`
+	TokenTypes  *TokenTypes `json:"token_types,omitempty"`
+}
+
+type TokenTypes struct {
+	Types string
+}
+
+func (g *TokenTypes) UnmarshalJSON(data []byte) error {
+	g.Types = string(data)
+	return nil
+}
+func (g *TokenTypes) MarshalJSON() ([]byte, error)  {
+	if len(g.Types) == 0 {
+		return nil, nil
+	}
+	return json.Marshal(strings.Split(g.Types,","))
+}
+
+type GrantType struct {
+	Types string
 }
 
 type ID struct {
-	Value string `json:"id,omitempty"`
+	Value string
+}
+func (g *GrantType) UnmarshalJSON(data []byte) error {
+	g.Types = string(data)
+	return nil
+}
+func (g *GrantType) MarshalJSON() ([]byte, error)  {
+	if len(g.Types) == 0 {
+		return nil, nil
+	}
+	return json.Marshal(strings.Split(g.Types,","))
 }
 
 func (i ID) MarshalJSON() ([]byte, error) {
@@ -96,12 +113,7 @@ func (i ID) MarshalJSON() ([]byte, error) {
 }
 func (i *ID) UnmarshalJSON(data []byte) error {
 
-	var v []interface{}
-	if err := json.Unmarshal(data, &v); err != nil {
-		return err
-	}
-
-	i.Value, _ = v[0].(string)
+	i.Value = string(data)
 
 	return nil
 }
