@@ -106,6 +106,5 @@ func (i ID) MarshalJSON() ([]byte, error) {
 }
 func (i *ID) UnmarshalJSON(data []byte) error {
 	i.Value = strings.ReplaceAll(string(data),"\"","")
-
 	return nil
 }

@@ -67,7 +67,8 @@ func (c client) validateToken() error {
 
 	return nil
 }
-
+// Creates a new Keyrock client
+// Default timeout is 2 sec
 func NewClient(options *Options) (*client, error) {
 	if err := validateOptions(options); err != nil {
 		return nil, err

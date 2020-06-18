@@ -8,7 +8,14 @@ import (
 )
 
 
-
+// Creates an application in Keyrock
+//
+// The following properties are required:
+//
+// RedirectUI, Name, Description, URL
+// The following characteristics must not be specified:
+//
+// Secret, JwtSecret, Image, ID
 func (c client) CreateApplication(app *application) error {
 	if err := c.validateToken(); err != nil {
 		return err
@@ -65,7 +72,10 @@ func (c client) CreateApplication(app *application) error {
 	return nil
 }
 
-
+// Create a pep-proxy for the given application
+//
+// Returns the proxy id and password. Don't lose the password you
+// can't get it again. If you forget it, you have to reset the password
 func (c client) CreatePepProxy(id ID) (*PepProxy, error) {
 	if err := c.validateToken(); err != nil {
 		return nil, err

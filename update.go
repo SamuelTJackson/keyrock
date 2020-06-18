@@ -7,6 +7,11 @@ import (
 	"net/http"
 )
 
+// Updates the given application
+//
+// Only the following properties are usable for an update:
+//
+// name, description, redirect URI, URL, grant types and token types
 func (c client) UpdateApplication(app *application) error {
 	if len(app.ID.Value)  == 0 {
 		return fmt.Errorf("id can not be empty")
