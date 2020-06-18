@@ -13,19 +13,26 @@ import (
 // Password: Password for the keyrock user
 // AutomaticTokenRefresh: Whether the token should be refreshed automatically or not
 type Options struct {
-	BaseURL 	string
-	Email		string
-	Password	string
+	BaseURL               string
+	Email                 string
+	Password              string
 	AutomaticTokenRefresh bool
 }
 
-
 type client struct {
-	httpClient *http.Client
-	options *Options
-	mutex *sync.Mutex
+	httpClient  *http.Client
+	options     *Options
+	mutex       *sync.Mutex
 	credentials *credentials
 }
+
+const (
+	TokenTypePermanent = "permanent"
+	TokenTypeJWT       = "jwt"
+	GrantTypePassword  = "password"
+	GrantTypeAuthCode  = "authorization_code"
+	GrantTypeImplicit  = "implicit"
+)
 
 // Password must be set
 // Email must be set
@@ -35,14 +42,14 @@ func validateOptions(options *Options) error {
 	if len(options.Password) == 0 {
 		return fmt.Errorf("password can not be empty")
 	}
-	if len(options.Email) == 0{
+	if len(options.Email) == 0 {
 		return fmt.Errorf("email can not be empty")
 	}
 	if len(options.BaseURL) == 0 {
 		return fmt.Errorf("base url can not be empty")
 	}
-	if options.BaseURL[len(options.BaseURL) - 1:] == "/" {
-		options.BaseURL = options.BaseURL[:len(options.BaseURL) - 1]
+	if options.BaseURL[len(options.BaseURL)-1:] == "/" {
+		options.BaseURL = options.BaseURL[:len(options.BaseURL)-1]
 	}
 	return nil
 }
@@ -61,7 +68,7 @@ func (c client) validateToken() error {
 	return nil
 }
 
-func NewClient(options *Options) (*client,error) {
+func NewClient(options *Options) (*client, error) {
 	if err := validateOptions(options); err != nil {
 		return nil, err
 	}
@@ -69,17 +76,16 @@ func NewClient(options *Options) (*client,error) {
 	httpClient.Timeout = time.Second * 2
 	newClient := &client{
 		httpClient: httpClient,
-		options: options,
-		mutex: &sync.Mutex{},
+		options:    options,
+		mutex:      &sync.Mutex{},
 	}
 	return newClient, nil
 }
-func (c *client) SetTransport(transport *http.Transport)  {
+func (c *client) SetTransport(transport *http.Transport) {
 	c.httpClient.Transport = transport
 }
 
-
-func NewApplication(name string, description string, url string) *application{
+func NewApplication(name string, description string, url string) *application {
 	return &application{}
 }
 func (a *application) WithURL(url string) *application {
@@ -95,7 +101,7 @@ func (a *application) WithName(name string) *application {
 	return a
 }
 func (a *application) WithRedirectURIS(uri ...string) *application {
-	a.RedirectURI = strings.Join(uri,",")
+	a.RedirectURI = strings.Join(uri, ",")
 	return a
 }
 func (a *application) WithGrantTypes(types ...string) *application {
@@ -107,9 +113,8 @@ func (a *application) WithTokenTypes(types ...string) *application {
 	return a
 }
 
-
 func (c client) Ping() error {
-	req, err := http.NewRequest("GET", c.getURL(""),nil)
+	req, err := http.NewRequest("GET", c.getURL(""), nil)
 	if err != nil {
 		return err
 	}
@@ -123,7 +128,3 @@ func (c client) Ping() error {
 	}
 	return nil
 }
-
-
-
-

@@ -61,8 +61,19 @@ type TokenTypes struct {
 	Types []string
 }
 
+
+// bearer is always returned back but is not valid
 func (g *TokenTypes) UnmarshalJSON(data []byte) error {
-	g.Types = strings.Split(strings.ReplaceAll(string(data),"\"",""),",")
+	noQuotes := strings.ReplaceAll(string(data),"\"","")
+	noSpaces := strings.ReplaceAll(noQuotes," ","")
+	splitted := strings.Split(noSpaces,",")
+	for index, tokenType := range splitted {
+		if tokenType == "bearer" {
+			splitted = append(splitted[:index], splitted[index+1:]...)
+			break
+		}
+	}
+	g.Types = splitted
 	return nil
 }
 func (g *TokenTypes) MarshalJSON() ([]byte, error)  {
