@@ -6,7 +6,6 @@ import (
 	"time"
 )
 
-
 type credentials struct {
 	token   string
 	valid   time.Time
@@ -52,6 +51,7 @@ type application struct {
 	GrantType   *GrantType  `json:"grant_type,omitempty"`
 	TokenTypes  *TokenTypes `json:"token_types,omitempty"`
 }
+
 func (a *application) WithURL(url string) *application {
 	a.URL = url
 	return a
@@ -130,7 +130,7 @@ func (i *ID) UnmarshalJSON(data []byte) error {
 }
 
 type user struct {
-	ID           ID    `json:"id,omitempty"`
+	ID           ID        `json:"id,omitempty"`
 	Image        string    `json:"image,omitempty"`
 	Gravatar     bool      `json:"gravatar,omitempty"`
 	Enabled      bool      `json:"enabled,omitempty"`
@@ -138,16 +138,17 @@ type user struct {
 	Username     string    `json:"username,omitempty"`
 	Email        string    `json:"email,omitempty"`
 	DatePassword time.Time `json:"date_password,omitempty"`
-	Password	 string		`json:"password,omitempty"`
+	Password     string    `json:"password,omitempty"`
 }
+
 func (u user) MarshalJSON() ([]byte, error) {
 	return json.Marshal(&struct {
-		Username     string    `json:"username,omitempty"`
-		Email        string    `json:"email,omitempty"`
-		Password	 string		`json:"password,omitempty"`
+		Username string `json:"username,omitempty"`
+		Email    string `json:"email,omitempty"`
+		Password string `json:"password,omitempty"`
 	}{
 		Username: u.Username,
-		Email: u.Email,
+		Email:    u.Email,
 		Password: u.Password,
 	})
 }
@@ -162,4 +163,9 @@ func (u *user) WithEmail(email string) *user {
 func (u *user) WithPassword(password string) *user {
 	u.Password = password
 	return u
+}
+
+type Role struct {
+	ID   ID     `json:"id"`
+	Name string `json:"name"`
 }

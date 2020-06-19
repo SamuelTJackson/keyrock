@@ -128,3 +128,30 @@ func (c client) GetApplication(id ID) (*application, error) {
 	}
 	return &app, nil
 }
+
+func (c client) ListRoles(id ID) ([]*Role, error) {
+	req, err := http.NewRequest("GET",c.getURL(fmt.Sprintf("/v1/applications/%s/roles",id.Value)),nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("X-Auth-token", c.credentials.token)
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	type roleList struct {
+		Roles []*Role `json:"roles"`
+	}
+	var roles roleList
+	if err := json.NewDecoder(resp.Body).Decode(&roles); err != nil {
+		return nil, err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("could not get roles - status code: %d", resp.StatusCode)
+	}
+
+	return roles.Roles,nil
+
+}
