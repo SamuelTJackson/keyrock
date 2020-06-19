@@ -86,7 +86,7 @@ func (c *client) SetTransport(transport *http.Transport) {
 	c.httpClient.Transport = transport
 }
 
-func NewApplication(name string, description string, url string) *application {
+func NewApplication() *application {
 	return &application{}
 }
 func (a *application) WithURL(url string) *application {
