@@ -64,3 +64,23 @@ func (c client) UpdateApplication(app *application) error {
 	}
 	return nil
 }
+
+// Assign a role to a user in an application
+func (c client) AssignRoleToUserInApp(roleID ID, userID ID, appID ID) error {
+	uri := fmt.Sprintf("/v1/applications/%s/users/%s/roles/%s",appID.Value, userID.Value, roleID.Value)
+	req, err := http.NewRequest("POST",c.getURL(uri), nil) // POST is used instead of PUT - POST gives error
+	if err != nil {
+		return err
+	}
+	req.Header.Set("X-Auth-token", c.credentials.token)
+	req.Header.Set("Content-Type", "application/json")
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusCreated {
+		return fmt.Errorf("could not assign user to role")
+	}
+	return nil
+}
