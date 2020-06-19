@@ -9,6 +9,10 @@ import (
 )
 
 func (c *client) GetToken() error {
+	type user struct {
+		Name     string `json:"name"`
+		Password string `json:"password"`
+	}
 	body, err := json.Marshal(&user{
 		Name:     c.options.Email,
 		Password: c.options.Password,

@@ -103,3 +103,50 @@ func (c client) CreatePepProxy(id ID) (*PepProxy, error) {
 	return &pepProxy.PepProxy, nil
 
 }
+
+func (c client) CreateUser(newUser *user) error {
+	if len(newUser.Username) == 0 {
+		return fmt.Errorf("username is required")
+	}
+	if len(newUser.Email) == 0 {
+		return fmt.Errorf("email is required")
+	}
+	if len(newUser.Password) == 0 {
+		return fmt.Errorf("password is required")
+	}
+	if (len(newUser.ID.Value) + len(newUser.Image)) != 0 {
+		return fmt.Errorf("only username, email and password are allowed")
+	}
+	type tempUser struct {
+		User *user `json:"user"`
+	}
+	body, err := json.Marshal(&tempUser{User: newUser})
+	if err != nil {
+		return err
+	}
+	req, err := http.NewRequest("POST", c.getURL("/v1/users"),bytes.NewBuffer(body))
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-Type","application/json")
+	req.Header.Set("X-Auth-token", c.credentials.token)
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusCreated {
+		return fmt.Errorf("could not create user - status code: %d", resp.StatusCode)
+	}
+	var createdUser tempUser
+	if err := json.NewDecoder(resp.Body).Decode(&createdUser); err != nil {
+		return err
+	}
+	newUser.Admin = createdUser.User.Admin
+	newUser.DatePassword = createdUser.User.DatePassword
+	newUser.Image = createdUser.User.Image
+	newUser.Enabled = createdUser.User.Enabled
+	newUser.Gravatar = createdUser.User.Gravatar
+	newUser.ID = createdUser.User.ID
+	return  nil
+}

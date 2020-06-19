@@ -3,7 +3,6 @@ package keyrock
 import (
 	"fmt"
 	"net/http"
-	"strings"
 	"sync"
 	"time"
 )
@@ -86,33 +85,13 @@ func (c *client) SetTransport(transport *http.Transport) {
 	c.httpClient.Transport = transport
 }
 
+func NewUser() *user {
+	return &user{}
+}
 func NewApplication() *application {
 	return &application{}
 }
-func (a *application) WithURL(url string) *application {
-	a.URL = url
-	return a
-}
-func (a *application) WithDescription(description string) *application {
-	a.Description = description
-	return a
-}
-func (a *application) WithName(name string) *application {
-	a.Name = name
-	return a
-}
-func (a *application) WithRedirectURIS(uri ...string) *application {
-	a.RedirectURI = strings.Join(uri, ",")
-	return a
-}
-func (a *application) WithGrantTypes(types ...string) *application {
-	a.GrantType.Types = types
-	return a
-}
-func (a *application) WithTokenTypes(types ...string) *application {
-	a.TokenTypes.Types = types
-	return a
-}
+
 
 func (c client) Ping() error {
 	req, err := http.NewRequest("GET", c.getURL(""), nil)
