@@ -5,6 +5,7 @@ import (
 	"net/http"
 )
 
+// Delete an application in keyrock by the given id.
 func (c client) DeleteApplication(id ID) error {
 	if err := c.validateToken(); err != nil {
 		return err
@@ -28,6 +29,7 @@ func (c client) DeleteApplication(id ID) error {
 	return nil
 }
 
+// Delete the stored token. You are not able to request data from keyrock without token
 func (c *client) DeleteToken() error {
 	if err := c.validateToken(); err != nil {
 		return err

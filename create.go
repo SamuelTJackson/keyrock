@@ -104,6 +104,9 @@ func (c client) CreatePepProxy(id ID) (*PepProxy, error) {
 
 }
 
+// Creates a new user
+//
+// You have to set the username, email and password other values are not allowed
 func (c client) CreateUser(newUser *user) error {
 	if len(newUser.Username) == 0 {
 		return fmt.Errorf("username is required")
