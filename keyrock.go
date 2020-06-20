@@ -7,23 +7,6 @@ import (
 	"time"
 )
 
-// BaseURL: Base url of keyrock
-// Email: Email of keyrock user
-// Password: Password for the keyrock user
-// AutomaticTokenRefresh: Whether the token should be refreshed automatically or not
-type Options struct {
-	BaseURL               string
-	Email                 string
-	Password              string
-	AutomaticTokenRefresh bool
-}
-
-type client struct {
-	httpClient  *http.Client
-	options     *Options
-	mutex       *sync.Mutex
-	credentials *credentials
-}
 
 const (
 	TokenTypePermanent = "permanent"
@@ -52,36 +35,48 @@ func validateOptions(options *Options) error {
 	}
 	return nil
 }
-func (c client) validateToken() error {
-	if len(c.credentials.token) == 0 {
-		return fmt.Errorf("no token available")
-	}
-	if time.Now().After(c.credentials.valid.Add(time.Second * 10)) {
-		if c.options.AutomaticTokenRefresh {
-			return c.GetToken()
+
+func (c *Client) WithToken(token string) *Client {
+	if c.credentials == nil {
+		c.credentials = &Credentials{
+			Token: token,
 		}
-		return TokenExpired{fmt.Errorf("token expired since %f minutes",
-			time.Now().Sub(c.credentials.valid).Minutes())}
+	} else {
+		c.credentials.Token = token
+	}
+	return c
+}
+
+func (c Client) validateToken() error {
+	if len(c.credentials.Token) == 0 {
+		return fmt.Errorf("no Token available")
+	}
+	if time.Now().After(c.credentials.Valid.Add(time.Second * 10)) {
+		if c.options.AutomaticTokenRefresh {
+			return c.GetTokenWithPassword()
+		}
+		return TokenExpired{fmt.Errorf("Token expired since %f minutes",
+			time.Now().Sub(c.credentials.Valid).Minutes())}
 	}
 
 	return nil
 }
-// Creates a new Keyrock client
+// Creates a new Keyrock Client
 // Default timeout is 2 sec
-func NewClient(options *Options) (*client, error) {
+func NewClient(options *Options) (*Client, error) {
 	if err := validateOptions(options); err != nil {
 		return nil, err
 	}
 	httpClient := &http.Client{}
 	httpClient.Timeout = time.Second * 2
-	newClient := &client{
+	newClient := &Client{
 		httpClient: httpClient,
 		options:    options,
 		mutex:      &sync.Mutex{},
 	}
 	return newClient, nil
 }
-func (c *client) SetTransport(transport *http.Transport) {
+func (c *Client) SetTransport(transport *http.Transport) {
 	c.httpClient.Transport = transport
 }
 
@@ -93,7 +88,7 @@ func NewApplication() *application {
 }
 
 
-func (c client) Ping() error {
+func (c Client) Ping() error {
 	req, err := http.NewRequest("GET", c.getURL(""), nil)
 	if err != nil {
 		return err

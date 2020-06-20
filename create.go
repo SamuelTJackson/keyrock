@@ -16,7 +16,7 @@ import (
 // The following characteristics must not be specified:
 //
 // Secret, JwtSecret, Image, ID
-func (c client) CreateApplication(app *application) error {
+func (c Client) CreateApplication(app *application) error {
 	if err := c.validateToken(); err != nil {
 		return err
 	}
@@ -33,7 +33,7 @@ func (c client) CreateApplication(app *application) error {
 		return fmt.Errorf("URL is required")
 	}
 	if len(app.Secret) != 0 || len(app.JwtSecret) != 0 || len(app.Image) != 0 || len(app.ID.Value) != 0{
-		return fmt.Errorf("only set name, description, redirect uri, grant types and token types")
+		return fmt.Errorf("only set name, description, redirect uri, grant types and Token types")
 	}
 	body, err := json.Marshal(struct {
 		*application `json:"application"`
@@ -46,7 +46,7 @@ func (c client) CreateApplication(app *application) error {
 		return err
 	}
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("X-Auth-token", c.credentials.token)
+	req.Header.Set("X-Auth-Token", c.credentials.Token)
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return err
@@ -76,7 +76,7 @@ func (c client) CreateApplication(app *application) error {
 //
 // Returns the proxy id and password. Don't lose the password you
 // can't get it again. If you forget it, you have to reset the password
-func (c client) CreatePepProxy(id ID) (*PepProxy, error) {
+func (c Client) CreatePepProxy(id ID) (*PepProxy, error) {
 	if err := c.validateToken(); err != nil {
 		return nil, err
 	}
@@ -86,7 +86,7 @@ func (c client) CreatePepProxy(id ID) (*PepProxy, error) {
 		return nil, err
 	}
 	req.Header.Set("Content-Type","application/json")
-	req.Header.Set("X-Auth-token", c.credentials.token)
+	req.Header.Set("X-Auth-Token", c.credentials.Token)
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return nil, err
@@ -107,7 +107,7 @@ func (c client) CreatePepProxy(id ID) (*PepProxy, error) {
 // Creates a new user
 //
 // You have to set the username, email and password other values are not allowed
-func (c client) CreateUser(newUser *user) error {
+func (c Client) CreateUser(newUser *user) error {
 	if len(newUser.Username) == 0 {
 		return fmt.Errorf("username is required")
 	}
@@ -132,7 +132,7 @@ func (c client) CreateUser(newUser *user) error {
 		return err
 	}
 	req.Header.Set("Content-Type","application/json")
-	req.Header.Set("X-Auth-token", c.credentials.token)
+	req.Header.Set("X-Auth-Token", c.credentials.Token)
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return err

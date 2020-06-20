@@ -6,7 +6,7 @@ import (
 )
 
 // Delete an application in keyrock by the given id.
-func (c client) DeleteApplication(id ID) error {
+func (c Client) DeleteApplication(id ID) error {
 	if err := c.validateToken(); err != nil {
 		return err
 	}
@@ -17,7 +17,7 @@ func (c client) DeleteApplication(id ID) error {
 	if err != nil {
 		return err
 	}
-	req.Header.Set("X-Auth-token", c.credentials.token)
+	req.Header.Set("X-Auth-Token", c.credentials.Token)
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return err
@@ -29,8 +29,8 @@ func (c client) DeleteApplication(id ID) error {
 	return nil
 }
 
-// Delete the stored token. You are not able to request data from keyrock without token
-func (c *client) DeleteToken() error {
+// Delete the stored Token. You are not able to request data from keyrock without Token
+func (c *Client) DeleteToken() error {
 	if err := c.validateToken(); err != nil {
 		return err
 	}
@@ -38,14 +38,14 @@ func (c *client) DeleteToken() error {
 	if err != nil {
 		return err
 	}
-	req.Header.Set("X-Auth-token",c.credentials.token)
-	req.Header.Set("X-Subject-token",c.credentials.token)
+	req.Header.Set("X-Auth-Token",c.credentials.Token)
+	req.Header.Set("X-Subject-Token",c.credentials.Token)
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return err
 	}
 	if resp.StatusCode != http.StatusNoContent {
-		return fmt.Errorf("could not delete token")
+		return fmt.Errorf("could not delete Token")
 	}
 	c.credentials = nil
 

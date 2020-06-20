@@ -11,8 +11,8 @@ import (
 //
 // Only the following properties are usable for an update:
 //
-// name, description, redirect URI, URL, grant types and token types
-func (c client) UpdateApplication(app *application) error {
+// name, description, redirect URI, URL, grant types and Token types
+func (c Client) UpdateApplication(app *application) error {
 	if len(app.ID.Value)  == 0 {
 		return fmt.Errorf("id can not be empty")
 	}
@@ -53,7 +53,7 @@ func (c client) UpdateApplication(app *application) error {
 		return err
 	}
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("X-Auth-token", c.credentials.token)
+	req.Header.Set("X-Auth-Token", c.credentials.Token)
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return err
@@ -66,13 +66,13 @@ func (c client) UpdateApplication(app *application) error {
 }
 
 // Assign a role to a user in an application
-func (c client) AssignRoleToUserInApp(roleID ID, userID ID, appID ID) error {
+func (c Client) AssignRoleToUserInApp(roleID ID, userID ID, appID ID) error {
 	uri := fmt.Sprintf("/v1/applications/%s/users/%s/roles/%s",appID.Value, userID.Value, roleID.Value)
 	req, err := http.NewRequest("POST",c.getURL(uri), nil) // POST is used instead of PUT - POST gives error
 	if err != nil {
 		return err
 	}
-	req.Header.Set("X-Auth-token", c.credentials.token)
+	req.Header.Set("X-Auth-Token", c.credentials.Token)
 	req.Header.Set("Content-Type", "application/json")
 	resp, err := c.httpClient.Do(req)
 	if err != nil {

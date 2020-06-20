@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-func (c *client) GetToken() error {
+func (c *Client) GetTokenWithPassword() error {
 	type user struct {
 		Name     string `json:"name"`
 		Password string `json:"password"`
@@ -35,7 +35,7 @@ func (c *client) GetToken() error {
 		Token struct {
 			Methods   []string  `json:"methods"`
 			ExpiresAt time.Time `json:"expires_at"`
-		} `json:"token"`
+		} `json:"Token"`
 	}
 	var tokenResponse TokenResponse
 	if err := json.NewDecoder(resp.Body).Decode(&tokenResponse); err != nil {
@@ -44,35 +44,81 @@ func (c *client) GetToken() error {
 	token := resp.Header.Get("X-Subject-Token")
 
 	if len(token) == 0 {
-		return fmt.Errorf("Could not get token. Keyrock responsed with %s - code: %d ",
+		return fmt.Errorf("Could not get Token. Keyrock responsed with %s - code: %d ",
 			resp.Status, resp.StatusCode)
 	}
-	c.credentials = &credentials{
-		token: token,
-		valid: tokenResponse.Token.ExpiresAt,
+	c.credentials = &Credentials{
+		Token:   token,
+		Valid:   tokenResponse.Token.ExpiresAt,
 		methods: tokenResponse.Token.Methods,
 	}
 	return nil
 }
 
-func (c client) GetTokenInfo() (*TokenInfo, error) {
-	if len(c.credentials.token) == 0 {
-		return nil, fmt.Errorf("no token available")
+func (c *Client) GetTokenWithToken(token string) error {
+	type tokenRequest struct {
+		Token     string `json:"token"`
+	}
+	body, err := json.Marshal(&tokenRequest{
+		Token: token,
+	})
+	if err != nil {
+		return err
+	}
+	req, err := http.NewRequest("POST", c.getURL("/v1/auth/tokens"), bytes.NewBuffer(body))
+	req.Header.Set("Content-Type","application/json")
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	if err := checkError(resp); err != nil {
+		return err
+	}
+
+	type TokenResponse struct {
+		Token struct {
+			Methods   []string  `json:"methods"`
+			ExpiresAt time.Time `json:"expires_at"`
+		} `json:"Token"`
+	}
+	var tokenResponse TokenResponse
+	if err := json.NewDecoder(resp.Body).Decode(&tokenResponse); err != nil {
+		return err
+	}
+	authToken := resp.Header.Get("X-Subject-Token")
+
+	if len(authToken) == 0 {
+		return fmt.Errorf("Could not get Token. Keyrock responsed with %s - code: %d ",
+			resp.Status, resp.StatusCode)
+	}
+	c.credentials = &Credentials{
+		Token:   authToken,
+		Valid:   tokenResponse.Token.ExpiresAt,
+		methods: tokenResponse.Token.Methods,
+	}
+	return nil
+}
+
+func (c Client) GetTokenInfo() (*TokenInfo, error) {
+	if c.credentials == nil || len(c.credentials.Token) == 0 {
+		return nil, fmt.Errorf("no Token available")
 	}
 	req, err := http.NewRequest("GET",c.getURL("/v1/auth/tokens"), nil)
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("X-Auth-token", c.credentials.token)
-	req.Header.Set("X-Subject-token", c.credentials.token)
+	req.Header.Set("X-Auth-Token", c.credentials.Token)
+	req.Header.Set("X-Subject-Token", c.credentials.Token)
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
 	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("could not get informations")
+	if err := checkError(resp); err != nil {
+		return nil, err
 	}
+
 	var tokenInfo TokenInfo
 	if err := json.NewDecoder(resp.Body).Decode(&tokenInfo); err != nil {
 		return nil, fmt.Errorf("could not decode keyrock response - %s", err.Error())
@@ -80,7 +126,7 @@ func (c client) GetTokenInfo() (*TokenInfo, error) {
 	return &tokenInfo, nil
 }
 
-func (c client) GetApplications() ([]*application, error) {
+func (c Client) GetApplications() ([]*application, error) {
 	if err := c.validateToken(); err != nil {
 		return nil, err
 	}
@@ -88,7 +134,7 @@ func (c client) GetApplications() ([]*application, error) {
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("X-Auth-token", c.credentials.token)
+	req.Header.Set("X-Auth-Token", c.credentials.Token)
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return nil, err
@@ -107,7 +153,7 @@ func (c client) GetApplications() ([]*application, error) {
 	return appList.Applications, nil
 }
 
-func (c client) GetApplication(id ID) (*application, error) {
+func (c Client) GetApplication(id ID) (*application, error) {
 	if err := c.validateToken(); err != nil {
 		return nil, err
 	}
@@ -115,7 +161,7 @@ func (c client) GetApplication(id ID) (*application, error) {
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("X-Auth-token", c.credentials.token)
+	req.Header.Set("X-Auth-Token", c.credentials.Token)
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return nil, err
@@ -129,12 +175,12 @@ func (c client) GetApplication(id ID) (*application, error) {
 	return &app, nil
 }
 
-func (c client) ListRoles(id ID) ([]*Role, error) {
+func (c Client) ListRoles(id ID) ([]*Role, error) {
 	req, err := http.NewRequest("GET",c.getURL(fmt.Sprintf("/v1/applications/%s/roles",id.Value)),nil)
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("X-Auth-token", c.credentials.token)
+	req.Header.Set("X-Auth-Token", c.credentials.Token)
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return nil, err
@@ -153,5 +199,20 @@ func (c client) ListRoles(id ID) ([]*Role, error) {
 	}
 
 	return roles.Roles,nil
+}
+func (c HTTPClient) GetUserInformation(token string) (*Userinformation, error){
+	resp, err := http.Get(fmt.Sprintf("%s/user?access_token=%s",c.KeyrockBaseURL, token))
+	if err != nil {
+		return nil, fmt.Errorf("could not get token from keyrock - error: %s" , err)
+	}
+	defer resp.Body.Close()
+	if err := checkError(resp); err != nil {
+		return nil, err
+	}
+	var userInformation Userinformation
+	if err := json.NewDecoder(resp.Body).Decode(&userInformation); err != nil {
+		return nil, err
+	}
 
+	return &userInformation, nil
 }

@@ -2,14 +2,52 @@ package keyrock
 
 import (
 	"encoding/json"
+	"net/http"
 	"strings"
+	"sync"
 	"time"
 )
 
-type credentials struct {
-	token   string
-	valid   time.Time
+type Credentials struct {
+	Token   string
+	Valid   time.Time
 	methods []string
+}
+
+type KeyrockError struct {
+	Message string `json:"message"`
+	Code    int    `json:"code"`
+	Title   string `json:"title"`
+	Err error
+
+}
+
+func (k KeyrockError) Error() string {
+	return k.Message
+}
+
+// BaseURL: Base url of keyrock
+// Email: Email of keyrock user
+// Password: Password for the keyrock user
+// AutomaticTokenRefresh: Whether the Token should be refreshed automatically or not
+type Options struct {
+	BaseURL               string
+	Email                 string
+	Password              string
+	AutomaticTokenRefresh bool
+}
+type HTTPClient struct {
+	ValidateState  func(state string) bool
+	SaveState      func(state string) error
+	KeyrockBaseURL string
+	RedirectURL    string
+}
+
+type Client struct {
+	httpClient  *http.Client
+	options     *Options
+	mutex       *sync.Mutex
+	credentials *Credentials
 }
 
 type UnauthorizedError struct {
@@ -27,7 +65,7 @@ type PepProxy struct {
 type TokenInfo struct {
 	AccessToken string    `json:"access_token"`
 	Expires     time.Time `json:"expires"`
-	Valid       bool      `json:"valid"`
+	Valid       bool      `json:"Valid"`
 	User        struct {
 		Scope        []interface{} `json:"scope"`
 		ID           string        `json:"id"`
@@ -81,7 +119,7 @@ type TokenTypes struct {
 	Types []string
 }
 
-// bearer is always returned back but is not valid
+// bearer is always returned back but is not Valid
 func (g *TokenTypes) UnmarshalJSON(data []byte) error {
 	noQuotes := strings.ReplaceAll(string(data), "\"", "")
 	noSpaces := strings.ReplaceAll(noQuotes, " ", "")
@@ -168,4 +206,30 @@ func (u *user) WithPassword(password string) *user {
 type Role struct {
 	ID   ID     `json:"id"`
 	Name string `json:"name"`
+}
+type Token struct {
+	Value string
+	ExpiresAt time.Time
+}
+
+type Userinformation struct {
+	Organizations []interface{} `json:"organizations"`
+	DisplayName   string        `json:"displayName"`
+	Roles         []struct {
+		ID   string `json:"id"`
+		Name string `json:"name"`
+	} `json:"roles"`
+	AppID                 string        `json:"app_id"`
+	TrustedApps           []interface{} `json:"trusted_apps"`
+	IsGravatarEnabled     bool          `json:"isGravatarEnabled"`
+	Image                 string        `json:"image"`
+	Email                 string        `json:"email"`
+	ID                    string        `json:"id"`
+	AuthorizationDecision string        `json:"authorization_decision"`
+	AppAzfDomain          string        `json:"app_azf_domain"`
+	EidasProfile          struct {
+	} `json:"eidas_profile"`
+	Attributes struct {
+	} `json:"attributes"`
+	Username string `json:"username"`
 }
